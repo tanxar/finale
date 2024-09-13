@@ -967,7 +967,8 @@ async function handleReferrals(chatId, userId, messageId) {
 
                 totalPercentage += percentageAdded;
 
-                message += `${index + 1}. User ID: ${referral.telegram_id} (${percentageAdded}% each)\n`;
+                // Formatting each referral entry
+                message += `${index + 1}. User ID: ${referral.telegram_id} (+${percentageAdded}%)\n`;
             });
         } else {
             message += 'No referrals found.\n';
@@ -990,6 +991,7 @@ async function handleReferrals(chatId, userId, messageId) {
         await editMessage(chatId, messageId, "An error occurred while fetching referrals.");
     }
 }
+
 
 
 
