@@ -709,7 +709,7 @@ if (step === 'enter_amount') {
 
             // Display confirmation message with "Confirm Withdrawal" in bold
             const { withdrawAmount } = userSessions[chatId];
-            const message = `<b>Confirm Withdrawal:</b>\n\nAmount: ${withdrawAmount} USDT\nTo Wallet: ${walletAddress.toBase58()}\n\nClick <b>confirm to proceed</b> or <b>cancel to abort</b>.`;
+            const message = `<b>Confirm Withdrawal</b>\n\nAmount: <b>${withdrawAmount}</b> USDT\n\nTo Wallet: <b>${walletAddress.toBase58()}</b>\n\nClick <b>confirm to proceed</b> or <b>cancel to abort</b>.`;
 
             const papardela = {
                 inline_keyboard: [
@@ -945,7 +945,7 @@ async function handleReferrals(chatId, userId, messageId) {
         const referralsResult = await client.query(referralsQuery, [referralCode]);
 
         // Add bold formatting for the "Referrals" title
-        let message = '<b>Referrals</b>\n\nReferrals are people you invited to use this bot.\n\n';
+        let message = '<b>Referrals</b>\nReferrals are people you invited to use this bot.\n\n1 to 5 --> +0.5%\n6 to 10 --> +0.2%\n11 to 100 --> +0.1%\n100 to unlimited --> 0.05%';
 
         if (referralsResult.rows.length > 0) {
             message += 'Your referrals:\n';
