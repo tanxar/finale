@@ -1,4 +1,4 @@
-// after 420 v3 
+// after 420 v3
 import cron from 'node-cron';
 import express from 'express';
 import bodyParser from 'body-parser';
@@ -1084,10 +1084,10 @@ app.get('/', (req, res) => {
 
 
 // Schedule the balance update to run every 2 minutes
-cron.schedule('*/1 * * * *', async () => {
-    console.log('Running balance update every 1 minute...');
-    await updateAllUserBalances();  // This function updates user balances in the DB
-  }, {
-    scheduled: true,
-    timezone: "UTC"  // You can change this to your local timezone if needed
-  });
+// cron.schedule('*/1 * * * *', async () => {
+//     console.log('Running balance update every 1 minute...');
+//     await updateAllUserBalances();  // This function updates user balances in the DB
+//   }, {
+//     scheduled: true,
+//     timezone: "UTC"  // You can change this to your local timezone if needed
+//   });
