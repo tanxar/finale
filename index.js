@@ -932,7 +932,7 @@ async function handleReferrals(chatId, userId, messageId) {
         // Fetch the user's referral code
         const userQuery = 'SELECT ref_code_invite_others FROM users WHERE telegram_id = $1';
         const userResult = await client.query(userQuery, [String(userId)]);
-        
+
         if (userResult.rows.length === 0) {
             await editMessage(chatId, messageId, "User not found.");
             return;
@@ -944,17 +944,37 @@ async function handleReferrals(chatId, userId, messageId) {
         const referralsQuery = 'SELECT telegram_id FROM users WHERE ref_code_invited_by = $1';
         const referralsResult = await client.query(referralsQuery, [referralCode]);
 
-        // Add bold formatting for the "Referrals" title
-        let message = '<b>Referrals</b>\nReferrals are people you invited to use this bot.\n\n1 to 5 --> +0.5%\n6 to 10 --> +0.2%\n11 to 100 --> +0.1%\n100 to unlimited --> 0.05%';
+        let message = '<b>Referrals</b>\nReferrals are people you invited to use this bot.\n\n1 to 5 --> +0.5% each\n6 to 10 --> +0.2% each\n11 to 100 --> +0.1% each\n101 to unlimited --> +0.05% each\n\n';
 
-        if (referralsResult.rows.length > 0) {
+        let totalReferrals = referralsResult.rows.length;
+        let totalPercentage = 0;
+
+        if (totalReferrals > 0) {
             message += 'Your referrals:\n';
+
             referralsResult.rows.forEach((referral, index) => {
-                message += `${index + 1}. User ID: ${referral.telegram_id}\n`;
+                let percentageAdded = 0;
+
+                if (index + 1 <= 5) {
+                    percentageAdded = 0.5;
+                } else if (index + 1 <= 10) {
+                    percentageAdded = 0.2;
+                } else if (index + 1 <= 100) {
+                    percentageAdded = 0.1;
+                } else {
+                    percentageAdded = 0.05;
+                }
+
+                totalPercentage += percentageAdded;
+
+                message += `${index + 1}. User ID: ${referral.telegram_id} (${percentageAdded}% each)\n`;
             });
         } else {
-            message += 'No referrals found.';
+            message += 'No referrals found.\n';
         }
+
+        // Adding the total percentage at the bottom
+        message += `\nTotal percentage added: ${totalPercentage.toFixed(2)}%`;
 
         // Add a "Back" button at the end
         const replyMarkup = {
@@ -970,6 +990,7 @@ async function handleReferrals(chatId, userId, messageId) {
         await editMessage(chatId, messageId, "An error occurred while fetching referrals.");
     }
 }
+
 
 
 async function handleBackToMain(chatId, userId, messageId) {
