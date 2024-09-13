@@ -929,8 +929,8 @@ async function sendMessage(chatId, text, replyMarkup = null, parseMode = 'Markdo
 
 async function handleReferrals(chatId, userId, messageId) {
     try {
-        // Fetch the user's referral code
-        const userQuery = 'SELECT ref_code_invite_others FROM users WHERE telegram_id = $1';
+        // Fetch the user's referral code and ref_code_invited_by
+        const userQuery = 'SELECT ref_code_invite_others, ref_code_invited_by FROM users WHERE telegram_id = $1';
         const userResult = await client.query(userQuery, [String(userId)]);
 
         if (userResult.rows.length === 0) {
@@ -939,12 +939,27 @@ async function handleReferrals(chatId, userId, messageId) {
         }
 
         const referralCode = userResult.rows[0].ref_code_invite_others;
+        const refCodeInvitedBy = userResult.rows[0].ref_code_invited_by;
+
+        // Halve the default percentages
+        let basePercentage1to5 = 0.25;
+        let basePercentage6to10 = 0.1;
+        let basePercentage11to100 = 0.05;
+        let basePercentage101plus = 0.025;
+
+        // If ref_code_invited_by is not empty, multiply percentages by 2
+        if (refCodeInvitedBy) {
+            basePercentage1to5 *= 2;
+            basePercentage6to10 *= 2;
+            basePercentage11to100 *= 2;
+            basePercentage101plus *= 2;
+        }
 
         // Query to find referrals using the referral code (only fetching telegram ID)
         const referralsQuery = 'SELECT telegram_id FROM users WHERE ref_code_invited_by = $1';
         const referralsResult = await client.query(referralsQuery, [referralCode]);
 
-        let message = '<b>Referrals</b>\nReferrals are people you invited to use this bot.\n\n1 to 5 --> +0.5% each\n6 to 10 --> +0.2% each\n11 to 100 --> +0.1% each\n101 to unlimited --> +0.05% each\n\n';
+        let message = '<b>Referrals</b>\nReferrals are people you invited to use this bot.\n\n1 to 5 --> +0.25% each\n6 to 10 --> +0.1% each\n11 to 100 --> +0.05% each\n101 to unlimited --> +0.025% each\n\n';
 
         let totalReferrals = referralsResult.rows.length;
         let totalPercentage = 0;
@@ -956,13 +971,13 @@ async function handleReferrals(chatId, userId, messageId) {
                 let percentageAdded = 0;
 
                 if (index + 1 <= 5) {
-                    percentageAdded = 0.5;
+                    percentageAdded = basePercentage1to5;
                 } else if (index + 1 <= 10) {
-                    percentageAdded = 0.2;
+                    percentageAdded = basePercentage6to10;
                 } else if (index + 1 <= 100) {
-                    percentageAdded = 0.1;
+                    percentageAdded = basePercentage11to100;
                 } else {
-                    percentageAdded = 0.05;
+                    percentageAdded = basePercentage101plus;
                 }
 
                 totalPercentage += percentageAdded;
@@ -975,22 +990,37 @@ async function handleReferrals(chatId, userId, messageId) {
         }
 
         // Adding the total percentage at the bottom
-        message += `\nTotal percentage added: ${totalPercentage.toFixed(2)}%`;
+        message += `\nTotal percentage added: ${totalPercentage.toFixed(2)}%\n`;
 
-        // Add a "Back" button at the end
+        // If the user has no referral code (`ref_code_invited_by` is empty), add a message encouraging them to add one
+        if (!refCodeInvitedBy) {
+            message += `\n<b>Enter a valid referral code and get x2 percent in your referrals!</b>`;
+        }
+
+        // Define the inline keyboard (buttons)
+        let inlineKeyboard = [];
+
+        // If the user has no referral code (`ref_code_invited_by` is empty), add the "Enter Referral Code" button
+        if (!refCodeInvitedBy) {
+            inlineKeyboard.push([{ text: 'Enter referral code', callback_data: 'enter_referral_code' }]);
+        }
+
+        // Add the "Back" button at the end
+        inlineKeyboard.push([{ text: '⬅️ Back', callback_data: 'back_to_main' }]);
+
+        // Create the reply markup with the buttons
         const replyMarkup = {
-            inline_keyboard: [
-                [{ text: '⬅️ Back', callback_data: 'back_to_main' }] // "Back" button
-            ],
+            inline_keyboard: inlineKeyboard
         };
 
-        // Edit the message to display referrals and show the "Back" button
+        // Edit the message to display referrals and show the buttons
         await editMessage(chatId, messageId, message, replyMarkup, 'HTML'); // 'HTML' for formatting
     } catch (error) {
         console.error(`Error fetching referrals: ${error.message}`);
         await editMessage(chatId, messageId, "An error occurred while fetching referrals.");
     }
 }
+
 
 
 
